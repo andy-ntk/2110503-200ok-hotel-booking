@@ -1,0 +1,21 @@
+const express = require('express');
+const dotenv = require('dotenv');
+
+// โหลดตัวแปรจาก config.env
+dotenv.config({ path: './config/config.env' });
+
+const app = express();
+
+// Body Parser ให้ Express อ่าน JSON ได้
+app.use(express.json());
+
+// เส้นทางทดสอบเบื้องต้น
+app.get('/', (req, res) => {
+    res.status(200).json({ success: true, message: 'Hotel Booking API is running' });
+});
+
+const PORT = process.env.PORT || 5003;
+
+app.listen(PORT, () => {
+    console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+});
