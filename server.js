@@ -6,10 +6,16 @@ dotenv.config({ path: './config/config.env' });
 
 const connectDB = require('./config/db');
 
+// Routes files
+const hotels = require('./routes/hotels');
+
 const app = express();
 
 // Body Parser ให้ Express อ่าน JSON ได้
 app.use(express.json());
+
+// Mount routers
+app.use('/api/v1/hotels', hotels);
 
 // เส้นทางทดสอบเบื้องต้น
 app.get('/', (req, res) => {
