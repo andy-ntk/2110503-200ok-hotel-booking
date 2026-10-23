@@ -12,7 +12,10 @@ exports.getHotels = async (req, res, next) => {
             data: hotels
         });
     } catch (err) {
-        res.status(400).json({ success: false});
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
     }
 };
 
@@ -23,14 +26,20 @@ exports.getHotel = async (req, res, next) => {
     try {
         const hotel = await Hotel.findById(req.params.id);
         if (!hotel) {
-            return res.status(404).json({ success: false});
+            return res.status(404).json({
+                success: false,
+                message: `Hotel not found with id of ${req.params.id}`
+            });
         }
         res.status(200).json({
             success: true,
             data: hotel
         });
     } catch (err) {
-        res.status(400).json({ success: false});
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
     }
 };
 
@@ -45,7 +54,10 @@ exports.createHotel = async (req, res, next) => {
             data: hotel
         });
     } catch (err) {
-        res.status(400).json({ success: false});
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
     }
 };
 
@@ -59,14 +71,20 @@ exports.updateHotel = async (req, res, next) => {
             runValidators: true
         });
         if (!hotel) {
-            return res.status(400).json({ success: false});
+            return res.status(404).json({
+                success: false,
+                message: `Hotel not found with id of ${req.params.id}`
+            });
         }
         res.status(200).json({
             success: true,
             data: hotel
         });
     } catch (err) {
-        res.status(400).json({ success: false});
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
     }
 };
 
@@ -77,13 +95,19 @@ exports.deleteHotel = async (req, res, next) => {
     try {
         const hotel = await Hotel.findByIdAndDelete(req.params.id);
         if (!hotel) {
-            return res.status(400).json({ success: false});
+            return res.status(404).json({
+                success: false,
+                message: `Hotel not found with id of ${req.params.id}`
+            });
         }
         res.status(200).json({
             success: true,
             data: {}
         });
     } catch (err) {
-        res.status(400).json({ success: false});
+        res.status(400).json({
+            success: false,
+            message: err.message
+        });
     }
 };
