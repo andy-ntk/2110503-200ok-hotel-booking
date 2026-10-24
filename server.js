@@ -8,6 +8,7 @@ const connectDB = require('./config/db');
 
 // Routes files
 const hotels = require('./routes/hotels');
+const auth = require('./routes/auth');
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(express.json());
 
 // Mount routers
 app.use('/api/v1/hotels', hotels);
+app.use('/api/v1/auth');
 
 // เส้นทางทดสอบเบื้องต้น
 app.get('/', (req, res) => {
