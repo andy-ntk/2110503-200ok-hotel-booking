@@ -73,3 +73,11 @@ exports.login = async (req, res, next) => {
 
     sendTokenRespond(user, 200, res);
 }
+
+exports.getMe = async (req, res, next) => {
+    const user = await User.findById(req.user.id);
+    res.status(200).json({
+        success: true,
+        data: user
+    });
+};
