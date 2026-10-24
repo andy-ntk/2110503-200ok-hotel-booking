@@ -17,7 +17,7 @@ app.use(express.json());
 
 // Mount routers
 app.use('/api/v1/hotels', hotels);
-app.use('/api/v1/auth');
+app.use('/api/v1/auth',auth);
 
 // เส้นทางทดสอบเบื้องต้น
 app.get('/', (req, res) => {
