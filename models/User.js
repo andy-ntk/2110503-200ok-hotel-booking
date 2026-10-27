@@ -7,6 +7,15 @@ const UserSchema=new mongoose.Schema({
         type:String,
         required:[true, 'Please add a name']
     },
+    phone:{
+        type:String,
+        required:[true, 'Please add ยphone number'],
+        unique: true,
+        match: [
+            /^[0-9]{10}$/,
+            'Please add a valid phone number'
+        ]
+    },
     email:{
         type: String,
         required:[true, 'Please add an email'],
@@ -18,7 +27,6 @@ const UserSchema=new mongoose.Schema({
     },
     role: {
         type:String,
-        enum: ['user','admin'],
         default: 'user'
     },
     password: {
