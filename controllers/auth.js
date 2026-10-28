@@ -29,14 +29,14 @@ const sendTokenRespond = (user, statusCode, res) => {
 //@access Public
 exports.register = async (req, res, next) => {
     try {
-        const { name, email, password, role } = req.body;
+        const { name,phone, email, password} = req.body;
 
         //Create user
         const user = await User.create({
             name,
+            phone,
             email,
-            password,
-            role
+            password
         });
         sendTokenRespond(user, 200, res);
     } catch (err) {
@@ -50,11 +50,12 @@ exports.register = async (req, res, next) => {
 //@route POST /api/v1/auth/login
 //@access Public
 exports.login = async (req, res, next) => {
-    const { email, password } = req.body;
 
     if (!req.body || Object.keys(req.body).length === 0) {
         return res.status(400).json({ success: false, msg: 'Please provide request body' });
     }
+
+    const { email, password } = req.body;
     //Validate Email & Password
     if (!email || !password) {
         return res.status(400).json({ success: false, msg: 'Please provide an email and password' });
