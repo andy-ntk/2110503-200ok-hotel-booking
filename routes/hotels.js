@@ -1,4 +1,6 @@
 const express = require('express');
+const {protect , authorize} = require('../middleware/auth');
+
 const {
     getHotels,
     getHotel,
@@ -11,11 +13,11 @@ const router = express.Router();
 
 router.route('/')
     .get(getHotels)
-    .post(createHotel);
+    .post(protect, authorize('admin'),createHotel);
     
 router.route('/:id')
     .get(getHotel)
-    .put(updateHotel)
-    .delete(deleteHotel);
+    .put(protect,authorize('admin'),updateHotel)
+    .delete(protect,authorize('admin'),deleteHotel);
 
 module.exports = router;
