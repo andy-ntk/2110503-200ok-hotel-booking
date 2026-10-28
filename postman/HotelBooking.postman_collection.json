@@ -1,0 +1,711 @@
+{
+  "info": {
+    "_postman_id": "283727e5-fb4b-4e69-808e-a2a0f9ef53f4",
+    "name": "HotelBooking",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "57494233",
+    "_collection_link": "https://go.postman.co/collection/57494233-283727e5-fb4b-4e69-808e-a2a0f9ef53f4?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Hotels",
+      "item": [
+        {
+          "name": "Get All Hotels",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{URL}}/api/v1/hotels",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hotels"
+              ]
+            },
+            "description": "Fetch all hotels from database."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Hotel",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{URL}}/api/v1/hotels/:id",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hotels",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6adb60a062a82267182763e6"
+                }
+              ]
+            },
+            "description": "Fetch a single hotel by ID from database."
+          },
+          "response": []
+        },
+        {
+          "name": "Create New Hotel",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "JSON Type"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Example Hotel\",\n  \"address\": \"123 Example Road\",\n  \"district\": \"Pathum Wan\",\n  \"province\": \"Bangkok\",\n  \"postalcode\": \"10330\",\n  \"tel\": \"02-123-4567\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL}}/api/v1/hotels",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hotels"
+              ]
+            },
+            "description": "Create a new hotel in database."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Single Hotel",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "JSON Type"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Example Hotel\",\n  \"address\": \"1234 Example Road\",\n  \"district\": \"Pathum Wan\",\n  \"province\": \"Bangkok\",\n  \"postalcode\": \"10330\",\n  \"tel\": \"02-123-4567\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL}}/api/v1/hotels/:id",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hotels",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "6adb60a062a82267182763e6"
+                }
+              ]
+            },
+            "description": "Update a single hotel by ID in database."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Single Hotel",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{URL}}/api/v1/hotels/:id",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hotels",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Delete a hotel by ID and cascade delete all bookings associated with that hotel. Only admins can perform this operation."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for managing hotel resources, including viewing hotel listings and administrative CRUD operations."
+    },
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set(\"TOKEN\", pm.response.json().token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "JSON Type"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"phone\": \"0812345678\",\n  \"email\": \"user@example.com\",\n  \"password\": \"UserPass123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL}}/api/v1/auth/register",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "register"
+              ]
+            },
+            "description": "Create a new user account."
+          },
+          "response": []
+        },
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set(\"TOKEN\", pm.response.json().token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "JSON Type"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"UserPass123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL}}/api/v1/auth/login",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Authenticate a user and return a JWT."
+          },
+          "response": []
+        },
+        {
+          "name": "Login Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set(\"TOKEN\", pm.response.json().token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "JSON Type"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"AdminPass123!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL}}/api/v1/auth/login",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "Authenticate an administrator and return a JWT."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "JSON Type"
+              }
+            ],
+            "url": {
+              "raw": "{{URL}}/api/v1/auth/me",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "me"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set(\"TOKEN\", null);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "JSON Type"
+              }
+            ],
+            "url": {
+              "raw": "{{URL}}/api/v1/auth/logout",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "auth",
+                "logout"
+              ]
+            },
+            "description": "Clear the authentication cookie."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for user registration, login, profile retrieval, and logout."
+    },
+    {
+      "name": "Booking",
+      "item": [
+        {
+          "name": "Get All Bookings",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "JSON Type"
+              }
+            ],
+            "url": {
+              "raw": "{{URL}}/api/v1/bookings",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings"
+              ]
+            },
+            "description": "Fetch bookings from the database. Users can view only their own bookings, while admins can view all bookings."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Bookings by Hotel",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "JSON Type"
+              }
+            ],
+            "url": {
+              "raw": "{{URL}}/api/v1/hotels/:hotelId/bookings",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hotels",
+                ":hotelId",
+                "bookings"
+              ],
+              "variable": [
+                {
+                  "key": "hotelId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Fetch bookings for a specific hotel. Users can view only their own bookings at that hotel, while admins can view all bookings at that hotel."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Booking",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "JSON Type"
+              }
+            ],
+            "url": {
+              "raw": "{{URL}}/api/v1/bookings/:id",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Fetch a single booking by ID. Only the booking owner or an admin can access the booking."
+          },
+          "response": []
+        },
+        {
+          "name": "Create New Booking",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "JSON Type"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"checkIn\": \"2026-11-01\",\n    \"checkOut\": \"2026-11-04\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL}}/api/v1/hotels/:hotelId/bookings",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "hotels",
+                ":hotelId",
+                "bookings"
+              ],
+              "variable": [
+                {
+                  "key": "hotelId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Create a booking for the specified hotel under the authenticated user's account. Check-in and check-out must use YYYY-MM-DD format, and the stay must be between 1 and 3 nights. Past dates are allowed."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Single Booking",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "JSON Type"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"checkIn\": \"2026-11-01\",\n    \"checkOut\": \"2026-11-03\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{URL}}/api/v1/bookings/:id",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Update a booking by ID. Only the booking owner or an admin can update the booking. Allowed fields are checkIn, checkOut, and hotel. Partial updates are supported, and the resulting stay must remain between 1 and 3 nights. The booking owner and creation time cannot be changed."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Single Booking",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{TOKEN}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "description": "JSON Type"
+              }
+            ],
+            "url": {
+              "raw": "{{URL}}/api/v1/bookings/:id",
+              "host": [
+                "{{URL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "bookings",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Delete a single booking by ID. Only the booking owner or an admin can delete the booking."
+          },
+          "response": []
+        }
+      ],
+      "description": "Endpoints for creating, viewing, updating, and deleting hotel bookings. Users can manage their own bookings, while admins can view, update, and delete any booking. Each booking allows a stay of 1–3 nights."
+    }
+  ],
+  "variable": [
+    {
+      "value": ""
+    }
+  ]
+}
