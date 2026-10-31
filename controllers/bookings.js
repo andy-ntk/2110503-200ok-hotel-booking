@@ -25,7 +25,7 @@ exports.getBookings = async (req, res, next) => {
 
             filter.hotel = req.params.hotelId;
         }
-        
+
         query = Booking.find(filter).populate({
             path: 'hotel',
             select: 'name address tel'
@@ -57,7 +57,7 @@ exports.getBookings = async (req, res, next) => {
 exports.getBooking = async (req, res, next) => {
     try {
         const filter = {_id: req.params.id};
-        
+
         if(req.params.hotelId){
             filter.hotel = req.params.hotelId;
         }
@@ -163,10 +163,17 @@ exports.addBooking = async (req, res, next) => {
 
 // @desc    Update booking
 // @route   PUT /api/v1/bookings/:id
+// @route   PUT /api/v1/hotels/:hotelId/bookings/:id
 // @access  Private
 exports.updateBooking = async (req, res, next) => {
     try {
-        const booking = await Booking.findById(req.params.id);
+        const filter = { _id: req.params.id };
+
+        if (req.params.hotelId) {
+            filter.hotel = req.params.hotelId;
+        }
+
+        const booking = await Booking.findOne(filter);
 
         if (!booking) {
             return res.status(404).json({
@@ -247,10 +254,17 @@ exports.updateBooking = async (req, res, next) => {
 
 // @desc    Delete booking
 // @route   DELETE /api/v1/bookings/:id
+// @route   DELETE /api/v1/hotels/:hotelId/bookings/:id
 // @access  Private
 exports.deleteBooking = async (req, res, next) => {
     try {
-        const booking = await Booking.findById(req.params.id);
+        const filter = { _id: req.params.id };
+
+        if (req.params.hotelId) {
+            filter.hotel = req.params.hotelId;
+        }
+
+        const booking = await Booking.findOne(filter);
 
         if (!booking) {
             return res.status(404).json({
