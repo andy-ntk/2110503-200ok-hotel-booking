@@ -10,6 +10,7 @@ const connectDB = require('./config/db');
 // Routes files
 const hotels = require('./routes/hotels');
 const auth = require('./routes/auth');
+const booking = require('./routes/bookings');
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use(express.json());
 // Mount routers
 app.use('/api/v1/hotels', hotels);
 app.use('/api/v1/auth',auth);
+app.use('/api/v1/bookings', booking);
 
 //cookie parser
 app.use(cookieParser());
