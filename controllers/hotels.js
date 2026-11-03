@@ -1,4 +1,5 @@
 const Hotel = require('../models/Hotel');
+const Booking = require('../models/Booking');
 
 // @desc    Get all hotels
 // @route   GET /api/v1/hotels
@@ -93,21 +94,32 @@ exports.updateHotel = async (req, res, next) => {
 // @access  Private
 exports.deleteHotel = async (req, res, next) => {
     try {
-        const hotel = await Hotel.findByIdAndDelete(req.params.id);
+        const hotel = await Hotel.findById(req.params.id);
         if (!hotel) {
             return res.status(404).json({
                 success: false,
                 message: `Hotel not found with id of ${req.params.id}`
             });
         }
+
+        // Delete all bookings belonging to this hotel
+        await Booking.deleteMany({ hotel: req.params.id });
+
+        // Delete the hotel after deleting all bookings
+        await hotel.deleteOne();
+
         res.status(200).json({
             success: true,
             data: {}
         });
     } catch (err) {
-        res.status(400).json({
+        console.log(err.stack);
+
+        const status = err.name === 'CastError' ? 400 : 500;
+
+        return res.status(status).json({
             success: false,
-            message: err.message
+            message: 'Cannot delete hotel'
         });
     }
 };
