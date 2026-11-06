@@ -27,6 +27,10 @@ const HotelSchema = new mongoose.Schema({
     tel: {
         type: String,
         required: [true, 'Please add a telephone number']
+    },
+    inventoryVersion: {
+        type: Number,
+        default: 0
     }
 });
 
