@@ -1,5 +1,8 @@
 const Hotel = require('../models/Hotel');
 const Booking = require('../models/Booking');
+const RoomType = require('../models/RoomType');
+const RoomInventory = require('../models/RoomInventory');
+const { withInventoryTransaction } = require('../services/inventoryService');
 
 // @desc    Get all hotels
 // @route   GET /api/v1/hotels
@@ -94,19 +97,15 @@ exports.updateHotel = async (req, res, next) => {
 // @access  Private
 exports.deleteHotel = async (req, res, next) => {
     try {
-        const hotel = await Hotel.findById(req.params.id);
-        if (!hotel) {
-            return res.status(404).json({
-                success: false,
-                message: `Hotel not found with id of ${req.params.id}`
-            });
-        }
-
-        // Delete all bookings belonging to this hotel
-        await Booking.deleteMany({ hotel: req.params.id });
-
-        // Delete the hotel after deleting all bookings
-        await hotel.deleteOne();
+        await withInventoryTransaction(
+            { hotelIds: [req.params.id] },
+            async (session) => {
+                await Booking.deleteMany({ hotel: req.params.id }).session(session);
+                await RoomInventory.deleteMany({ hotel: req.params.id }).session(session);
+                await RoomType.deleteMany({ hotel: req.params.id }).session(session);
+                await Hotel.deleteOne({ _id: req.params.id }).session(session);
+            }
+        );
 
         res.status(200).json({
             success: true,
@@ -114,6 +113,17 @@ exports.deleteHotel = async (req, res, next) => {
         });
     } catch (err) {
         console.log(err.stack);
+
+        if (err.statusCode) {
+            const body = {
+                success: false,
+                message: err.message
+            };
+            if (err.code) {
+                body.code = err.code;
+            }
+            return res.status(err.statusCode).json(body);
+        }
 
         const status = err.name === 'CastError' ? 400 : 500;
 
