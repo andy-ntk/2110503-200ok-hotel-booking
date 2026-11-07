@@ -4,7 +4,8 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "node --test",
+    "test": "node --test --test-concurrency=1",
+    "test:integration": "node scripts/runIntegrationTests.js",
     "dev": "nodemon server.js",
     "migrate": "node scripts/migrateBookings.js"
   },
