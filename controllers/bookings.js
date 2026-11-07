@@ -8,6 +8,7 @@ const {
     releaseStay
 } = require('../services/inventoryService');
 const { quoteStay } = require('../services/pricingService');
+const { getBangkokTodayDate } = require('../utils/date');
 
 const sendBookingError = (res, err, fallbackMessage) => {
     const isValidationError =
@@ -485,5 +486,93 @@ exports.deleteBooking = async (req, res, next) => {
     } catch (err) {
         console.log(err.stack);
         return sendBookingError(res, err, 'Cannot delete booking');
+    }
+};
+
+// @desc    Change room type before the check-in day (Asia/Bangkok)
+// @route   PATCH /api/v1/bookings/:id/room-type
+// @route   PATCH /api/v1/hotels/:hotelId/bookings/:id/room-type
+// @access  Private (owner or admin)
+exports.changeRoomType = async (req, res) => {
+    try {
+        if (
+            !req.body || typeof req.body !== 'object' || Array.isArray(req.body) ||
+            Object.keys(req.body).length !== 1 || !Object.hasOwn(req.body, 'roomType') ||
+            !mongoose.isObjectIdOrHexString(req.body.roomType)
+        ) {
+            throw createAppError('Provide only roomType as a valid ObjectId', 400, 'INVALID_ROOM_TYPE_ID');
+        }
+        if (
+            !mongoose.isObjectIdOrHexString(req.params.id) ||
+            (req.params.hotelId && !mongoose.isObjectIdOrHexString(req.params.hotelId))
+        ) {
+            throw createAppError('Booking and hotel IDs must be valid ObjectIds', 400, 'INVALID_ID');
+        }
+
+        const targetRoomTypeId = new mongoose.Types.ObjectId(req.body.roomType).toString();
+        const filter = { _id: req.params.id };
+        if (req.params.hotelId) filter.hotel = req.params.hotelId;
+        const initialBooking = await Booking.findOne(filter);
+        if (!initialBooking) {
+            throw createAppError('Booking not found', 404, 'BOOKING_NOT_FOUND');
+        }
+
+        const hotelIds = [initialBooking.hotel.toString()];
+        const data = await withInventoryTransaction({ hotelIds }, async (session, lockedHotelIds) => {
+            const booking = await Booking.findOne(filter).session(session);
+            if (!booking) {
+                throw createAppError('Booking not found', 404, 'BOOKING_NOT_FOUND');
+            }
+            const hotelId = booking.hotel.toString();
+            if (!lockedHotelIds.includes(hotelId)) {
+                if (!hotelIds.includes(hotelId)) hotelIds.push(hotelId);
+                const err = new Error('Booking hotel changed concurrently');
+                err.isTransientRetry = true;
+                throw err;
+            }
+            if (booking.user.toString() !== req.user.id && req.user.role !== 'admin') {
+                throw createAppError('Not authorized to change this booking', 403, 'FORBIDDEN');
+            }
+            if (booking.checkIn.getTime() <= getBangkokTodayDate().getTime()) {
+                throw createAppError('Room type can only change before the check-in day', 409, 'CHECK_IN_STARTED');
+            }
+
+            const previousTotalPriceSatang = booking.totalPriceSatang;
+            // A no-op preserves the original quote, even if the type is now inactive.
+            if (booking.roomType.toString() === targetRoomTypeId) {
+                return {
+                    booking,
+                    previousTotalPriceSatang,
+                    newTotalPriceSatang: previousTotalPriceSatang,
+                    priceDifferenceSatang: 0
+                };
+            }
+
+            const stay = { hotelId, checkIn: booking.checkIn, checkOut: booking.checkOut, session };
+            await reserveStay({ ...stay, roomTypeId: targetRoomTypeId });
+            await releaseStay({ ...stay, roomTypeId: booking.roomType });
+            const quote = await quoteStay({
+                roomTypeId: targetRoomTypeId,
+                checkIn: booking.checkIn,
+                checkOut: booking.checkOut,
+                session
+            });
+            booking.set({
+                roomType: targetRoomTypeId,
+                nightlyPrices: quote.nightlyPrices,
+                totalPriceSatang: quote.totalPriceSatang,
+                pricingRuleVersion: quote.pricingRuleVersion
+            });
+            await booking.save({ session });
+            return {
+                booking,
+                previousTotalPriceSatang,
+                newTotalPriceSatang: quote.totalPriceSatang,
+                priceDifferenceSatang: quote.totalPriceSatang - previousTotalPriceSatang
+            };
+        });
+        return res.status(200).json({ success: true, data });
+    } catch (err) {
+        return sendBookingError(res, err, 'Cannot change room type');
     }
 };
