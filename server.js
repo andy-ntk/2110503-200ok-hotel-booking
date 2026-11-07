@@ -17,13 +17,13 @@ const app = express();
 // Body Parser ให้ Express อ่าน JSON ได้
 app.use(express.json());
 
+//cookie parser
+app.use(cookieParser());
+
 // Mount routers
 app.use('/api/v1/hotels', hotels);
 app.use('/api/v1/auth',auth);
 app.use('/api/v1/bookings', booking);
-
-//cookie parser
-app.use(cookieParser());
 
 // เส้นทางทดสอบเบื้องต้น
 app.get('/', (req, res) => {
@@ -45,4 +45,8 @@ const startServer = async () => {
     }
 };
 
-startServer();
+if (require.main === module) {
+    startServer();
+}
+
+module.exports = app;
