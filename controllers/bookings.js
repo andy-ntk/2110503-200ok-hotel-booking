@@ -280,7 +280,7 @@ exports.updateBooking = async (req, res, next) => {
 
         const updatedBooking = await withInventoryTransaction(
             { hotelIds: hotelIdsToLock },
-            async (session) => {
+            async (session, lockedHotelIds = []) => {
                 const booking = await Booking.findOne(filter).session(session);
                 if (!booking) {
                     throw createAppError(
@@ -290,9 +290,27 @@ exports.updateBooking = async (req, res, next) => {
                     );
                 }
 
-                // If booking's hotel changed concurrently before lock acquisition, retry
-                if (!hotelIdsToLock.includes(booking.hotel.toString())) {
-                    hotelIdsToLock.push(booking.hotel.toString());
+                const currentHotelId = booking.hotel.toString();
+                const targetHotelId = Object.hasOwn(req.body, 'hotel')
+                    ? req.body.hotel.toString()
+                    : currentHotelId;
+
+                const lockedSet = new Set(
+                    lockedHotelIds.map((id) => id.toString())
+                );
+
+                // Verify that the actual locked hotel set for this attempt covers both
+                // the booking's current hotel and target hotel; otherwise add and retry
+                if (
+                    !lockedSet.has(currentHotelId) ||
+                    !lockedSet.has(targetHotelId)
+                ) {
+                    if (!hotelIdsToLock.includes(currentHotelId)) {
+                        hotelIdsToLock.push(currentHotelId);
+                    }
+                    if (!hotelIdsToLock.includes(targetHotelId)) {
+                        hotelIdsToLock.push(targetHotelId);
+                    }
                     const retryErr = new Error('Booking hotel changed concurrently');
                     retryErr.isTransientRetry = true;
                     throw retryErr;
@@ -310,11 +328,7 @@ exports.updateBooking = async (req, res, next) => {
                     );
                 }
 
-                const targetHotelId = Object.hasOwn(req.body, 'hotel')
-                    ? req.body.hotel.toString()
-                    : booking.hotel.toString();
-                const isChangingHotel =
-                    targetHotelId !== booking.hotel.toString();
+                const isChangingHotel = targetHotelId !== currentHotelId;
 
                 if (isChangingHotel && !Object.hasOwn(req.body, 'roomType')) {
                     throw createAppError(
@@ -416,7 +430,7 @@ exports.deleteBooking = async (req, res, next) => {
 
         await withInventoryTransaction(
             { hotelIds: hotelIdsToLock },
-            async (session) => {
+            async (session, lockedHotelIds = []) => {
                 const booking = await Booking.findOne(filter).session(session);
                 if (!booking) {
                     throw createAppError(
@@ -426,8 +440,15 @@ exports.deleteBooking = async (req, res, next) => {
                     );
                 }
 
-                if (!hotelIdsToLock.includes(booking.hotel.toString())) {
-                    hotelIdsToLock.push(booking.hotel.toString());
+                const currentHotelId = booking.hotel.toString();
+                const lockedSet = new Set(
+                    lockedHotelIds.map((id) => id.toString())
+                );
+
+                if (!lockedSet.has(currentHotelId)) {
+                    if (!hotelIdsToLock.includes(currentHotelId)) {
+                        hotelIdsToLock.push(currentHotelId);
+                    }
                     const retryErr = new Error('Booking hotel changed concurrently');
                     retryErr.isTransientRetry = true;
                     throw retryErr;

@@ -20,24 +20,43 @@ const createAppError = (message, statusCode, code) => {
     return err;
 };
 
+const hasErrorLabel = (err, label) => {
+    if (!err) {
+        return false;
+    }
+
+    if (typeof err.hasErrorLabel === 'function' && err.hasErrorLabel(label)) {
+        return true;
+    }
+
+    if (Array.isArray(err.errorLabels) && err.errorLabels.includes(label)) {
+        return true;
+    }
+
+    return false;
+};
+
+const isUnknownCommitError = (err) => {
+    if (!err) {
+        return false;
+    }
+
+    if (err.code === 50 || err.codeName === 'MaxTimeMSExpired') {
+        return false;
+    }
+
+    return (
+        hasErrorLabel(err, 'UnknownTransactionCommitResult') &&
+        !hasErrorLabel(err, 'TransientTransactionError')
+    );
+};
+
 const isTransientTransactionError = (err) => {
     if (!err) {
         return false;
     }
 
-    if (
-        typeof err.hasErrorLabel === 'function' &&
-        (err.hasErrorLabel('TransientTransactionError') ||
-            err.hasErrorLabel('UnknownTransactionCommitResult'))
-    ) {
-        return true;
-    }
-
-    if (
-        Array.isArray(err.errorLabels) &&
-        (err.errorLabels.includes('TransientTransactionError') ||
-            err.errorLabels.includes('UnknownTransactionCommitResult'))
-    ) {
+    if (hasErrorLabel(err, 'TransientTransactionError')) {
         return true;
     }
 
@@ -61,23 +80,39 @@ const normalizeSortedHotelIds = (hotelIds = []) => {
     return uniqueIds;
 };
 
-const withInventoryTransaction = async ({ hotelIds = [] } = {}, callback) => {
-    const sortedHotelIds = normalizeSortedHotelIds(hotelIds);
+const resolveAndValidateHotelIds = (hotelIdsInput) => {
+    const rawHotelIds =
+        typeof hotelIdsInput === 'function' ? hotelIdsInput() : hotelIdsInput;
+    const sortedHotelIds = normalizeSortedHotelIds(rawHotelIds || []);
 
     for (const id of sortedHotelIds) {
         if (!mongoose.isObjectIdOrHexString(id)) {
-            throw createAppError('Hotel must be a valid ObjectId', 400, 'INVALID_HOTEL_ID');
+            throw createAppError(
+                'Hotel must be a valid ObjectId',
+                400,
+                'INVALID_HOTEL_ID'
+            );
         }
     }
+
+    return sortedHotelIds;
+};
+
+const withInventoryTransaction = async ({ hotelIds = [] } = {}, callback) => {
+    resolveAndValidateHotelIds(hotelIds);
 
     let lastError;
 
     for (let attempt = 1; attempt <= MAX_TRANSACTION_RETRIES; attempt++) {
+        const sortedHotelIds = resolveAndValidateHotelIds(hotelIds);
         const session = await mongoose.startSession();
+        let commitStarted = false;
+
         try {
             let result;
             session.startTransaction();
 
+            const lockedHotelIds = [];
             // Lock each hotel in deterministic sorted order by bumping inventoryVersion
             for (const hotelId of sortedHotelIds) {
                 const lockedHotel = await Hotel.findByIdAndUpdate(
@@ -93,24 +128,52 @@ const withInventoryTransaction = async ({ hotelIds = [] } = {}, callback) => {
                         'HOTEL_NOT_FOUND'
                     );
                 }
+
+                lockedHotelIds.push(hotelId);
             }
 
-            result = await callback(session);
+            result = await callback(session, lockedHotelIds);
 
-            await session.commitTransaction();
+            commitStarted = true;
+            for (
+                let commitAttempt = 1;
+                commitAttempt <= MAX_TRANSACTION_RETRIES;
+                commitAttempt++
+            ) {
+                try {
+                    await session.commitTransaction();
+                    break;
+                } catch (commitErr) {
+                    if (
+                        isUnknownCommitError(commitErr) &&
+                        commitAttempt < MAX_TRANSACTION_RETRIES
+                    ) {
+                        continue;
+                    }
+                    throw commitErr;
+                }
+            }
+
             return result;
         } catch (err) {
-            if (session.inTransaction()) {
-                await session.abortTransaction();
+            if (!commitStarted && session.inTransaction()) {
+                try {
+                    await session.abortTransaction();
+                } catch (_abortErr) {
+                    // Ignore abort errors when transaction state already transitioned
+                }
             }
 
             lastError = err;
 
-            if (isTransientTransactionError(err) && attempt < MAX_TRANSACTION_RETRIES) {
+            if (
+                isTransientTransactionError(err) &&
+                attempt < MAX_TRANSACTION_RETRIES
+            ) {
                 continue;
             }
 
-            if (isTransientTransactionError(err)) {
+            if (isTransientTransactionError(err) || isUnknownCommitError(err)) {
                 throw createAppError(
                     'Transaction conflict after retries, please try again',
                     409,
