@@ -785,6 +785,7 @@ test('Unit test teardown verification - all Mongoose model methods are restored 
 });
 
 const TEST_MONGO_URI = process.env.TEST_MONGO_URI;
+const { assertTestDatabase } = require('../utils/testDatabase');
 
 test(
     'Integration & Concurrency (MongoDB Replica Set) - Requirements 1 to 3 and Migration',
@@ -794,6 +795,7 @@ test(
         assert.equal(RoomType.findById, originalMethods.roomTypeFindById);
         assert.equal(Booking.findOne, originalMethods.bookingFindOne);
 
+        assertTestDatabase(TEST_MONGO_URI);
         await mongoose.connect(TEST_MONGO_URI);
         let server;
         let baseUrl;
@@ -958,7 +960,29 @@ test(
 
         const winner = conc1.status === 201 ? conc1 : conc2;
         const loser = conc1.status === 409 ? conc1 : conc2;
-        assert.equal(loser.body.code, 'CAPACITY_FULL');
+        assert.ok(['CAPACITY_FULL', 'TRANSACTION_CONFLICT'].includes(loser.body.code));
+        assert.equal(
+            await Booking.countDocuments({ hotel: hotel1Id, roomType: deluxeId }),
+            1
+        );
+        const concurrentInventory = await RoomInventory.find({
+            hotel: hotel1Id,
+            roomType: deluxeId
+        });
+        assert.ok(concurrentInventory.length > 0);
+        assert.ok(concurrentInventory.every((inv) => inv.bookedRooms === 1));
+
+        // Once the winning transaction has committed, a fresh request must see full capacity.
+        const fullAfterCommit = await requestJson('POST', `/hotels/${hotel1Id}/bookings`, {
+            token: userToken,
+            body: {
+                roomType: deluxeId,
+                checkIn: '2026-11-07',
+                checkOut: '2026-11-09'
+            }
+        });
+        assert.equal(fullAfterCommit.status, 409);
+        assert.equal(fullAfterCommit.body.code, 'CAPACITY_FULL');
 
         // Back-to-back booking on checkOut date (2026-11-09 to 2026-11-10) must succeed
         const backToBackRes = await requestJson(
